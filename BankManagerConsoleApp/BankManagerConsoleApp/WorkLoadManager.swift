@@ -4,41 +4,30 @@
 //
 //  Created by jeremy, LJ on 2022/11/02.
 //
+import Foundation
+
 
 struct WorkLoadManager {
-    var taskQueue: CustomerQueue = CustomerQueue<Int>()
-    var bankManagers: [BankManager]  = [BankManager()]
+    var taskQueue: CustomerQueue = CustomerQueue<(Task, BlockOperation)>()
+    var operationQueue: OperationQueue = OperationQueue()
+    var creditQueue: OperationQueue = OperationQueue()
     
-    mutating func giveWorkToAvailableManager() {
-        guard let available = searchForAvailableManager(),
-              let task = getNextTask() else {
-            print("no available manager")
-            return
+    init(){
+        self.operationQueue.maxConcurrentOperationCount = 2
+        self.creditQueue.maxConcurrentOperationCount = 1
+    }
+    
+    mutating func work() {
+        while taskQueue.isEmpty() != true {
+            guard let (task, operation) = taskQueue.dequeue() else { return }
+            
+            switch task {
+            case Task.deposit:
+                operationQueue.addOperation(operation)
+            default:
+                creditQueue.addOperation(operation)
+            }
         }
-
-        giveTask(number: available, task: task)
-    }
-    
-    private mutating func getNextTask() -> Int? {
-        guard let task = self.taskQueue.dequeue() else {
-            return nil
-        }
-        return task
-    }
-    
-    private func searchForAvailableManager() -> Int? {
-        let managersCountRange = Array<Int>(0...(bankManagers.count - 1))
-        let number = managersCountRange.first(
-            where: {
-            bankManagers[$0].isAvailable
-        })
-
-        return number
-    }
-    
-    private mutating func giveTask(number: Int, task: Int) {
-        bankManagers[number].toggleAvailability()
-        bankManagers[number].work(customerNumber: task)
-        bankManagers[number].toggleAvailability()
     }
 }
+
