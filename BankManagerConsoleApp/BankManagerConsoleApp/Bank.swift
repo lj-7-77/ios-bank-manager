@@ -5,7 +5,7 @@
 //  Created by jeremy, LJ on 2022/11/02.
 //
 import Foundation
-
+let semaphore = DispatchSemaphore(value: 2)
 typealias App = Displayable & SelectableMenu & Runnable
 struct Bank: App {
     private var workLoadManager: WorkLoadManager = WorkLoadManager()
@@ -17,15 +17,14 @@ struct Bank: App {
     }
     
     mutating func runBankingJobs() {
-        let queue = OperationQueue()
         
         while workLoadManager.taskQueue.isEmpty() == false {
             workLoadManager.work()
         }
-        
         closeBank(with: 70)
     }
     
+    // MARK: Customers Entering
     private mutating func customersEnetering() {
         let maxCustomersNumber: Int = Int.random(in: 10...70)
         let overallCustomersCount = Array<Int>(1...maxCustomersNumber)
@@ -40,20 +39,25 @@ struct Bank: App {
         return Int.random(in: 1...2)
     }
     
-    func makeOperation(number: Int) -> (Task, BlockOperation) {
+    
+    // MARK: makeOperation
+    func makeOperation(number: Int) -> (Int, Task, DispatchWorkItem) {
         let task = Task.getTask(by: getRandomTask())
-        let operation = BlockOperation {
-            print(" \(number)번쨰 고객, \(task.rawValue)업무 진행 🌀")
-            switch task {
-            case Task.credit:
-                sleep(UInt32(1.1))
-            default:
-                sleep(UInt32(0.7))
-            }
-        }
-        operation.completionBlock = { print(" \(number)번쨰 고객, \(task.rawValue)업무 완료 ✅") }
+        let semaphore = task.maxOperations
         
-        let result = (task: task, op: operation)
+        let operation = DispatchWorkItem {
+            semaphore.wait()
+            print(" \(number)번쨰 고객, \(task.rawValue)업무 진행 🌀")
+            task.workingTime
+            semaphore.signal()
+        }
+        operation.notify(queue: .global()) {
+            print(" \(number)번쨰 고객, \(task.rawValue)업무 완료 ✅")
+        }
+        
+        let result = (number: number,
+                      task: task,
+                      op: operation)
         return result
     }
     

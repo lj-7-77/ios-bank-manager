@@ -8,26 +8,33 @@ import Foundation
 
 
 struct WorkLoadManager {
-    var taskQueue: CustomerQueue = CustomerQueue<(Task, BlockOperation)>()
-    var operationQueue: OperationQueue = OperationQueue()
-    var creditQueue: OperationQueue = OperationQueue()
+    var taskQueue: CustomerQueue = CustomerQueue<(Int, Task, DispatchWorkItem)>()
+    let banking = DispatchGroup()
+    var queue1 = DispatchQueue(label: Task.deposit.rawValue, attributes: .concurrent)
+    var queue2 = DispatchQueue(label: Task.credit.rawValue, attributes: .concurrent)
+//    var operationQueue: OperationQueue = OperationQueue()
+//    var creditQueue: OperationQueue = OperationQueue()
     
-    init(){
-        self.operationQueue.maxConcurrentOperationCount = 2
-        self.creditQueue.maxConcurrentOperationCount = 1
-    }
+//    init(){
+//        self.operationQueue.maxConcurrentOperationCount = 2
+//        self.creditQueue.maxConcurrentOperationCount = 1
+//    }
     
     mutating func work() {
+        
         while taskQueue.isEmpty() != true {
-            guard let (task, operation) = taskQueue.dequeue() else { return }
-            
+            guard let (number, task, operation) = taskQueue.dequeue() else { return }
+
             switch task {
             case Task.deposit:
-                operationQueue.addOperation(operation)
+//                operationQueue.addOperation(operation)
+                queue1.async(execute: operation)
+
             default:
-                creditQueue.addOperation(operation)
+                queue2.async(execute: operation)
             }
         }
+//        banking.wait()
     }
 }
 
