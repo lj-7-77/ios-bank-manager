@@ -6,25 +6,25 @@
 //
 import Foundation
 
-enum Task: String {
-    case deposit = "예금"
-    case credit = "대출"
+enum Task: Int {
+    case deposit = 1
+    case credit
     
-    static func getTask(by: Int) -> Self {
-        switch by {
-        case 1:
-            return Self.deposit
-        default:
-            return Self.credit
+    var name: String {
+        switch self {
+        case .deposit:
+            return "예금"
+        case .credit:
+            return "대출"
         }
     }
-    
+
     var workingTime: Void {
         switch self {
         case .deposit:
-            sleep(2)
+            usleep(700000)
         case .credit:
-            sleep(1)
+            usleep(1100000)
         }
     }
     
